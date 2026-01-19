@@ -1,3 +1,4 @@
+
 // Fix: Removed invalid file markers that were causing parsing errors.
 // --- Type Definitions for external libraries ---
 // Fix: Replaced `declare` statements with explicit assignments from the global `window` object to prevent "Cannot find name 'declare'" errors.
@@ -35,9 +36,12 @@ const shipmentTypeFilter = document.getElementById('shipment-type-filter') as HT
 const cargoTypeFilter = document.getElementById('cargo-type-filter') as HTMLSelectElement;
 const poSearchInput = document.getElementById('po-search-input') as HTMLInputElement;
 const vesselSearchInput = document.getElementById('vessel-search-input') as HTMLInputElement;
+const blSearchInput = document.getElementById('bl-search-input') as HTMLInputElement;
+const brokerSearchInput = document.getElementById('broker-search-input') as HTMLInputElement;
 const poFilter = document.getElementById('po-filter') as HTMLSelectElement;
 const vesselFilter = document.getElementById('vessel-filter') as HTMLSelectElement;
 const batchFilter = document.getElementById('batch-filter') as HTMLSelectElement;
+const brokerFilter = document.getElementById('broker-filter') as HTMLSelectElement;
 
 
 // Export Buttons
@@ -83,7 +87,7 @@ let chartDataSource: {
 let mainBarChart: any = null;
 let statusPieChart: any = null;
 let deadlineDistributionChart: any = null;
-let currentView: 'vessel' | 'po' | 'warehouse' | 'detailed' = 'vessel';
+let currentViewState: 'vessel' | 'po' | 'warehouse' | 'detailed' = 'vessel';
 const TODAY = new Date(); // Use current date
 let currentSortKey: string = 'Dias Restantes';
 let currentSortOrder: 'asc' | 'desc' = 'asc';
@@ -92,9 +96,9 @@ let currentLanguage = 'pt';
 
 // Column definitions for each view
 const viewColumns = {
-    vessel: ['PO SAP', 'VOYAGE', 'BL/AWB', 'SHIPOWNER', 'STATUS', 'SHIPMENT TYPE', 'TYPE OF CARGO', 'BATCH CHINA', 'ACTUAL ETA', 'FREE TIME DEADLINE', 'Dias Restantes', 'BONDED WAREHOUSE'],
-    po: ['ARRIVAL VESSEL', 'VOYAGE', 'BL/AWB', 'SHIPOWNER', 'STATUS', 'SHIPMENT TYPE', 'TYPE OF CARGO', 'BATCH CHINA', 'ACTUAL ETA', 'FREE TIME DEADLINE', 'Dias Restantes', 'BONDED WAREHOUSE'],
-    warehouse: ['ARRIVAL VESSEL', 'VOYAGE', 'PO SAP', 'BL/AWB', 'SHIPOWNER', 'STATUS', 'SHIPMENT TYPE', 'TYPE OF CARGO', 'BATCH CHINA', 'ACTUAL ETA', 'FREE TIME DEADLINE', 'Dias Restantes']
+    vessel: ['PO SAP', 'VOYAGE', 'BL/AWB', 'SHIPOWNER', 'STATUS', 'SHIPMENT TYPE', 'TYPE OF CARGO', 'BATCH CHINA', 'ACTUAL ETA', 'FREE TIME DEADLINE', 'Dias Restantes', 'BONDED WAREHOUSE', 'BROKER'],
+    po: ['ARRIVAL VESSEL', 'VOYAGE', 'BL/AWB', 'SHIPOWNER', 'STATUS', 'SHIPMENT TYPE', 'TYPE OF CARGO', 'BATCH CHINA', 'ACTUAL ETA', 'FREE TIME DEADLINE', 'Dias Restantes', 'BONDED WAREHOUSE', 'BROKER'],
+    warehouse: ['ARRIVAL VESSEL', 'VOYAGE', 'PO SAP', 'BL/AWB', 'SHIPOWNER', 'STATUS', 'SHIPMENT TYPE', 'TYPE OF CARGO', 'BATCH CHINA', 'ACTUAL ETA', 'FREE TIME DEADLINE', 'Dias Restantes', 'BROKER']
 };
 let columnVisibility: Record<string, boolean> = {};
 
@@ -136,6 +140,8 @@ function initializeApp() {
     lightModeBtn.addEventListener('click', () => setTheme('light'));
     poSearchInput.addEventListener('input', applyFiltersAndRender);
     vesselSearchInput.addEventListener('input', applyFiltersAndRender);
+    blSearchInput.addEventListener('input', applyFiltersAndRender);
+    brokerSearchInput.addEventListener('input', applyFiltersAndRender);
     logoUpload.addEventListener('change', handleLogoUpload);
     removeLogoBtn.addEventListener('click', handleRemoveLogo);
     languageSelector.addEventListener('change', (e) => setLanguage((e.target as HTMLSelectElement).value));
@@ -181,7 +187,12 @@ const translations = {
     'filter_po': { pt: 'Filtrar POs', en: 'Filter POs', zh: '筛选采购订单' },
     'search_vessel': { pt: 'Pesquisar por Navio', en: 'Search by Vessel', zh: '按船只搜索' },
     'placeholder_search_vessel': { pt: 'Digite o nome do navio...', en: 'Enter vessel name...', zh: '输入船名...' },
+    'search_bl': { pt: 'Pesquisar por BL', en: 'Search by BL', zh: '按提单搜索' },
+    'placeholder_search_bl': { pt: 'Digite o número do BL...', en: 'Enter BL number...', zh: '输入提单号...' },
+    'search_broker': { pt: 'Pesquisar por Broker', en: 'Search by Broker', zh: '按Broker搜索' },
+    'placeholder_search_broker': { pt: 'Digite o nome do Broker...', en: 'Enter Broker name...', zh: '输入Broker名称...' },
     'filter_vessel': { pt: 'Filtrar Navios', en: 'Filter Vessels', zh: '筛选船只' },
+    'filter_broker': { pt: 'Filtrar Brokers', en: 'Filter Brokers', zh: '筛选Brokers' },
     'cargo_status': { pt: 'Status da Carga', en: 'Cargo Status', zh: '货物状态' },
     'shipment_type': { pt: 'Tipo de Carga', en: 'Shipment Type', zh: '装运类型' },
     'cargo_type': { pt: 'Tipo de Mercadoria', en: 'Cargo Type', zh: '货物类型' },
@@ -218,6 +229,7 @@ const translations = {
     'no_cargo_type': { pt: 'Sem Tipo de Mercadoria', en: 'No Cargo Type', zh: '无货物类型' },
     'no_warehouse': { pt: 'Sem Armazém', en: 'No Warehouse', zh: '无仓库' },
     'no_batch': { pt: 'Sem Batch', en: 'No Batch', zh: '无批次' },
+    'no_broker': { pt: 'Sem Broker', en: 'No Broker', zh: '无Broker' },
     // Toast Messages
     'toast_success_upload': { pt: 'Dashboard carregado com sucesso!', en: 'Dashboard loaded successfully!', zh: '仪表板加载成功！' },
     'toast_error_sheet_not_found': { pt: 'Planilha "{sheetName}" não encontrada.', en: 'Sheet "{sheetName}" not found.', zh: '未找到工作表“{sheetName}”。' },
@@ -290,6 +302,7 @@ function setLanguage(lang: string) {
         populatePoFilter(originalData);
         populateVesselFilter(originalData);
         populateBatchFilter(originalData);
+        populateBrokerFilter(originalData);
         // Re-render everything to apply translations to dynamic content
         applyFiltersAndRender();
     }
@@ -384,6 +397,7 @@ function handleFileUpload(event: Event) {
             populatePoFilter(originalData);
             populateVesselFilter(originalData);
             populateBatchFilter(originalData);
+            populateBrokerFilter(originalData);
             applyFiltersAndRender();
             
             filterContainer.classList.remove('hidden');
@@ -480,6 +494,22 @@ function applyFiltersAndRender() {
                 return String(row['PO SAP'] || '').toLowerCase().includes(poSearchTerm);
             });
         }
+
+        // BL Search Filter
+        const blSearchTerm = blSearchInput.value.trim().toLowerCase();
+        if (blSearchTerm) {
+            filteredData = filteredData.filter(row => {
+                return String(row['BL/AWB'] || '').toLowerCase().includes(blSearchTerm);
+            });
+        }
+
+        // Broker Search Filter
+        const brokerSearchTerm = brokerSearchInput.value.trim().toLowerCase();
+        if (brokerSearchTerm) {
+            filteredData = filteredData.filter(row => {
+                return String(row['BROKER'] || '').toLowerCase().includes(brokerSearchTerm);
+            });
+        }
         
         // PO Filter (multi-select)
         const selectedPOs = Array.from(poFilter.selectedOptions).map(opt => opt.value);
@@ -487,14 +517,6 @@ function applyFiltersAndRender() {
             filteredData = filteredData.filter(row => selectedPOs.includes(row['PO SAP'] || translate('no_po')));
         }
 
-        // Vessel Search Filter
-        const vesselSearchTerm = vesselSearchInput.value.trim().toLowerCase();
-        if (vesselSearchTerm) {
-            filteredData = filteredData.filter(row => {
-                return String(row['ARRIVAL VESSEL'] || '').toLowerCase().includes(vesselSearchTerm);
-            });
-        }
-        
         // Vessel Filter (multi-select)
         const selectedVessels = Array.from(vesselFilter.selectedOptions).map(opt => opt.value);
         if (selectedVessels.length > 0 && !selectedVessels.includes('')) {
@@ -525,22 +547,36 @@ function applyFiltersAndRender() {
             filteredData = filteredData.filter(row => selectedBatches.includes(row['BATCH CHINA'] || translate('no_batch')));
         }
 
+        // Broker Filter (multi-select)
+        const selectedBrokers = Array.from(brokerFilter.selectedOptions).map(opt => opt.value);
+        if (selectedBrokers.length > 0 && !selectedBrokers.includes('')) {
+            filteredData = filteredData.filter(row => selectedBrokers.includes(row['BROKER'] || translate('no_broker')));
+        }
+
+        // Vessel Search Filter
+        const vesselSearchTerm = vesselSearchInput.value.trim().toLowerCase();
+        if (vesselSearchTerm) {
+            filteredData = filteredData.filter(row => {
+                return String(row['ARRIVAL VESSEL'] || '').toLowerCase().includes(vesselSearchTerm);
+            });
+        }
+
         filteredDataCache = filteredData;
         
         let processedData;
-        if (currentView === 'vessel') {
+        if (currentViewState === 'vessel') {
             processedData = processDataByVessel(filteredData);
             renderVesselDashboard(processedData);
             renderCharts(processedData, filteredData);
-        } else if (currentView === 'po') {
+        } else if (currentViewState === 'po') {
             processedData = processDataByPO(filteredData);
             renderPODashboard(processedData);
             renderCharts(processedData, filteredData);
-        } else if (currentView === 'warehouse') {
+        } else if (currentViewState === 'warehouse') {
             processedData = processDataByWarehouse(filteredData);
             renderWarehouseDashboard(processedData);
             renderCharts(processedData, filteredData);
-        } else if (currentView === 'detailed') {
+        } else if (currentViewState === 'detailed') {
             processedData = processDataForDetailedView(filteredData);
             renderDetailedDashboard(processedData);
             // Destroy charts if they exist
@@ -563,12 +599,15 @@ function resetFiltersAndRender() {
         deadlineEndDate.value = '';
         poSearchInput.value = '';
         vesselSearchInput.value = '';
+        blSearchInput.value = '';
+        brokerSearchInput.value = '';
         Array.from(statusFilter.options).forEach((opt, i) => opt.selected = i === 0);
         Array.from(shipmentTypeFilter.options).forEach((opt, i) => opt.selected = i === 0);
         Array.from(cargoTypeFilter.options).forEach((opt, i) => opt.selected = i === 0);
         Array.from(poFilter.options).forEach((opt, i) => opt.selected = i === 0);
         Array.from(vesselFilter.options).forEach((opt, i) => opt.selected = i === 0);
         Array.from(batchFilter.options).forEach((opt, i) => opt.selected = i === 0);
+        Array.from(brokerFilter.options).forEach((opt, i) => opt.selected = i === 0);
         applyFiltersAndRender();
         hideLoading();
     }, 50);
@@ -577,8 +616,8 @@ function resetFiltersAndRender() {
 
 // --- View Switching ---
 function setView(view: 'vessel' | 'po' | 'warehouse' | 'detailed') {
-    if (currentView === view) return;
-    currentView = view;
+    if (currentViewState === view) return;
+    currentViewState = view;
     
     const buttons = { vessel: viewVesselBtn, po: viewPoBtn, warehouse: viewWarehouseBtn, detailed: viewDetailedBtn };
     Object.values(buttons).forEach(btn => {
@@ -910,12 +949,14 @@ function createDetailedCard(vesselName: string, poGroups: any[], totalContainers
     const card = document.createElement('div');
     card.className = `card col-span-1 lg:col-span-3 xl:col-span-3`;
 
-    const headers = ['CARGO TYPE', 'PO QTY', 'PO NUMBER', 'BATCH', 'BL', 'QTY', 'ETA', 'STATUS'];
+    const headers = ['CARGO TYPE', 'PO QTY', 'PO NUMBER', 'BATCH', 'BL', 'QTY', 'ETA', 'WAREHOUSE', 'STATUS', 'BROKER'];
     const dataKeys: Record<string, string> = {
         'BATCH': 'BATCH CHINA',
         'BL': 'BL/AWB',
         'ETA': 'ACTUAL ETA',
-        'STATUS': 'STATUS'
+        'STATUS': 'STATUS',
+        'WAREHOUSE': 'BONDED WAREHOUSE',
+        'BROKER': 'BROKER'
     };
 
     let shipmentsHtml = '';
@@ -935,11 +976,11 @@ function createDetailedCard(vesselName: string, poGroups: any[], totalContainers
             
             const qtyCell = `<td class="px-3 py-2 whitespace-nowrap font-semibold">${blQty}</td>`;
 
-            const etaStatusCells = ['ETA', 'STATUS'].map(header => {
+            const etaWarehouseStatusCells = ['ETA', 'WAREHOUSE', 'STATUS', 'BROKER'].map(header => {
                  return `<td class="px-3 py-2 whitespace-nowrap">${shipment[dataKeys[header]] || ''}</td>`;
             }).join('');
 
-            shipmentsHtml += `<tr class="border-b text-xs">${cargoTypeHtml}${poQtyHtml}${poNumberHtml}${otherCells}${qtyCell}${etaStatusCells}</tr>`;
+            shipmentsHtml += `<tr class="border-b text-xs">${cargoTypeHtml}${poQtyHtml}${poNumberHtml}${otherCells}${qtyCell}${etaWarehouseStatusCells}</tr>`;
         });
     });
 
@@ -1050,9 +1091,9 @@ function renderCharts(processedData: any[], filteredData: any[]) {
 
 
     let barChartTitleKey: string;
-    if (currentView === 'vessel') {
+    if (currentViewState === 'vessel') {
         barChartTitleKey = 'chart_title_containers_by_vessel';
-    } else if (currentView === 'po') {
+    } else if (currentViewState === 'po') {
         barChartTitleKey = 'chart_title_containers_by_po';
     } else { // Warehouse view
         barChartTitleKey = 'chart_title_containers_by_warehouse';
@@ -1074,6 +1115,7 @@ function renderCharts(processedData: any[], filteredData: any[]) {
                 data, 
                 backgroundColor: (processedData as any[]).map(item => getRiskColor(item.overallRisk)),
                 // Custom property to hold risk data for tooltips
+                // @ts-ignore
                 riskCounts: (processedData as any[]).map(item => item.riskCounts)
             }] 
         },
@@ -1083,6 +1125,7 @@ function renderCharts(processedData: any[], filteredData: any[]) {
             scales: {
                 x: {
                     beginAtZero: true,
+                    // @ts-ignore
                     grace: '5%' // Add extra space at the top
                 }
             },
@@ -1315,6 +1358,17 @@ function populateBatchFilter(data: any[]) {
     });
 }
 
+function populateBrokerFilter(data: any[]) {
+    const brokers = [...new Set(data.map(row => row['BROKER'] || translate('no_broker')))].sort();
+    brokerFilter.innerHTML = `<option value="" selected>${translate('all_option')}</option>`;
+    brokers.forEach(broker => {
+        const option = document.createElement('option');
+        option.value = broker;
+        option.textContent = broker;
+        brokerFilter.appendChild(option);
+    });
+}
+
 function updateTotalContainers(data: any[]) {
     const total = data.reduce((sum, s) => sum + getContainerCount(s), 0);
     totalFclCount.textContent = total.toString();
@@ -1413,7 +1467,7 @@ function setupColumnToggles() {
 }
 
 function populateColumnToggles() {
-    const columns = viewColumns[currentView];
+    const columns = viewColumns[currentViewState as keyof typeof viewColumns] || viewColumns.vessel;
     // Re-check defaults if a column has no saved setting
     columns.forEach(col => {
         if (columnVisibility[col] === undefined) {
@@ -1430,7 +1484,8 @@ function populateColumnToggles() {
 }
 
 function getVisibleColumns(): string[] {
-    return viewColumns[currentView].filter(col => columnVisibility[col]);
+    const columns = viewColumns[currentViewState as keyof typeof viewColumns] || viewColumns.vessel;
+    return columns.filter(col => columnVisibility[col]);
 }
 
 function loadColumnVisibility() {
@@ -1464,7 +1519,7 @@ function handleExcelExport() {
     const workbook = XLSX.utils.book_new();
 
     // Handle "Detailed View" as a special case
-    if (currentView === 'detailed') {
+    if (currentViewState === 'detailed') {
         const detailedData = processDataForDetailedView(filteredDataCache);
         const dataToExport: any[] = [];
         
@@ -1480,7 +1535,9 @@ function handleExcelExport() {
                         'BL': shipment['BL/AWB'] || '',
                         'BL Qty': getContainerCount(shipment),
                         'ETA': shipment['ACTUAL ETA'] || '',
-                        'Status': shipment['STATUS'] || ''
+                        'Warehouse': shipment['BONDED WAREHOUSE'] || '',
+                        'Status': shipment['STATUS'] || '',
+                        'Broker': shipment['BROKER'] || ''
                     });
                 });
             });
@@ -1491,17 +1548,27 @@ function handleExcelExport() {
 
     } else {
         // Handle standard views (Vessel, PO, Warehouse)
+        
+        // Define ALL columns we want in the report, including mandatory Vessel and Qty
+        const exportHeaders = [
+            'ARRIVAL VESSEL', 'VOYAGE', 'PO SAP', 'BL/AWB', 'SHIPOWNER', 'STATUS', 
+            'SHIPMENT TYPE', 'TYPE OF CARGO', 'BATCH CHINA', 'ACTUAL ETA', 
+            'FREE TIME DEADLINE', 'Dias Restantes', 'BONDED WAREHOUSE', 'CONTAINER QTY', 'BROKER'
+        ];
 
         // 1. Filtered Data Sheet
-        const visibleHeaders = getVisibleColumns();
         const dataToExport = filteredDataCache.map(row => {
             const newRow: Record<string, any> = {};
-            visibleHeaders.forEach(header => {
-                newRow[header] = row[header] ?? '';
+            exportHeaders.forEach(header => {
+                if (header === 'CONTAINER QTY') {
+                    newRow[header] = getContainerCount(row);
+                } else {
+                    newRow[header] = row[header] ?? '';
+                }
             });
             return newRow;
         });
-        const filteredDataSheet = XLSX.utils.json_to_sheet(dataToExport, { header: visibleHeaders });
+        const filteredDataSheet = XLSX.utils.json_to_sheet(dataToExport, { header: exportHeaders });
         XLSX.utils.book_append_sheet(workbook, filteredDataSheet, 'Filtered Data');
 
         // 2. Main Bar Chart Data Sheet
@@ -1576,7 +1643,7 @@ function renderModalContent() {
     const { name, totalFCL, shipments } = activeModalItem;
     
     // 1. Render Header
-    const prefix = (currentView === 'po') ? 'PO: ' : '';
+    const prefix = (currentViewState === 'po') ? 'PO: ' : '';
     const title = `${prefix}${name}`;
     
     const uniqueWarehouses = [...new Set(shipments
@@ -1618,13 +1685,14 @@ function renderModalContent() {
         'BATCH CHINA',
         'ACTUAL ETA',
         'FREE TIME DEADLINE',
-        'Dias Restantes'
+        'Dias Restantes',
+        'BROKER'
     ];
     
     // Add view-specific columns at the beginning
-    if (currentView === 'vessel') {
+    if (currentViewState === 'vessel') {
         headers = ['PO SAP', 'VOYAGE', ...baseHeaders];
-    } else if (currentView === 'po') {
+    } else if (currentViewState === 'po') {
         headers = ['ARRIVAL VESSEL', 'VOYAGE', ...baseHeaders];
     } else { // warehouse view
         headers = ['ARRIVAL VESSEL', 'VOYAGE', 'PO SAP', ...baseHeaders];
@@ -1643,7 +1711,8 @@ function renderModalContent() {
         'STATUS': 'Status',
         'ACTUAL ETA': 'Chegada Real',
         'FREE TIME DEADLINE': 'Prazo Free Time',
-        'BONDED WAREHOUSE': 'Armazém'
+        'BONDED WAREHOUSE': 'Armazém',
+        'BROKER': 'Broker'
     };
     
     const sortedShipments = sortData(shipments);
