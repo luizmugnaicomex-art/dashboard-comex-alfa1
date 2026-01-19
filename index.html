@@ -13,7 +13,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="index.css">
-<link rel="stylesheet" href="/index.css">
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-screen-2xl mx-auto">
@@ -72,28 +71,36 @@
                     <label for="status-filter" class="block text-sm font-medium text-gray-700" data-translate-key="cargo_status">Status da Carga</label>
                     <select id="status-filter" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm h-28"></select>
                 </div>
-                <div class="md:col-span-2">
+                <div class="md:col-span-1.5 lg:col-span-2">
                     <label for="shipment-type-filter" class="block text-sm font-medium text-gray-700" data-translate-key="shipment_type">Tipo de Carga</label>
                     <select id="shipment-type-filter" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm h-28"></select>
                 </div>
-                <div class="md:col-span-2">
+                <div class="md:col-span-1.5 lg:col-span-2">
                     <label for="cargo-type-filter" class="block text-sm font-medium text-gray-700" data-translate-key="cargo_type">Tipo de Mercadoria</label>
                     <select id="cargo-type-filter" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm h-28"></select>
                 </div>
-                 <div class="md:col-span-2">
+                 <div class="md:col-span-1.5 lg:col-span-1">
                     <label for="batch-filter" class="block text-sm font-medium text-gray-700" data-translate-key="batch_filter">Batch China</label>
                     <select id="batch-filter" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm h-28"></select>
+                </div>
+                <div class="md:col-span-1.5 lg:col-span-1">
+                    <label for="broker-filter" class="block text-sm font-medium text-gray-700" data-translate-key="filter_broker">Broker</label>
+                    <select id="broker-filter" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm h-28"></select>
                 </div>
 
 
                 <!-- Row 2: Search Inputs & Arrival Dates -->
-                <div class="md:col-span-3">
+                <div class="md:col-span-2">
                     <label for="po-search-input" class="block text-sm font-medium text-gray-700" data-translate-key="search_po">Pesquisar por PO</label>
                     <input type="text" id="po-search-input" data-translate-key-placeholder="placeholder_search_po" placeholder="Digite o número da PO..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                 </div>
-                <div class="md:col-span-3">
+                <div class="md:col-span-2">
                     <label for="vessel-search-input" class="block text-sm font-medium text-gray-700" data-translate-key="search_vessel">Pesquisar por Navio</label>
                     <input type="text" id="vessel-search-input" data-translate-key-placeholder="placeholder_search_vessel" placeholder="Digite o nome do navio..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="bl-search-input" class="block text-sm font-medium text-gray-700" data-translate-key="search_bl">Pesquisar por BL</label>
+                    <input type="text" id="bl-search-input" data-translate-key-placeholder="placeholder_search_bl" placeholder="Digite o número do BL..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                 </div>
                 <div class="md:col-span-3">
                     <label for="arrival-start-date" class="block text-sm font-medium text-gray-700" data-translate-key="arrival_start">Início da Chegada</label>
@@ -105,13 +112,17 @@
                 </div>
 
                 <!-- Row 3: Deadline Dates & Action Buttons -->
-                 <div class="md:col-span-3">
+                 <div class="md:col-span-2">
                     <label for="deadline-start-date" class="block text-sm font-medium text-gray-700" data-translate-key="freetime_start">Início do FreeTime</label>
                     <input type="date" id="deadline-start-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                 </div>
-                <div class="md:col-span-3">
+                <div class="md:col-span-2">
                     <label for="deadline-end-date" class="block text-sm font-medium text-gray-700" data-translate-key="freetime_end">Fim do FreeTime</label>
                     <input type="date" id="deadline-end-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="broker-search-input" class="block text-sm font-medium text-gray-700" data-translate-key="search_broker">Pesquisar por Broker</label>
+                    <input type="text" id="broker-search-input" data-translate-key-placeholder="placeholder_search_broker" placeholder="Digite o nome do Broker..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                 </div>
                 <div class="md:col-span-6 flex items-end space-x-2">
                      <button id="apply-filters-btn" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-700 transition-colors duration-200 font-semibold flex items-center justify-center">
@@ -206,6 +217,5 @@
     <div id="toast-container" class="toast-container"></div>
 
     <script src="index.tsx" type="module"></script>
-<script type="module" src="/index.tsx"></script>
 </body>
 </html>
